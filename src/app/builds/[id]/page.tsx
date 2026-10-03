@@ -139,7 +139,17 @@ export default function BuildDetailPage({ params }: { params: Promise<{ id: stri
               {explainLoading ? (
                 <Skeleton className="h-24 w-full" />
               ) : (
-                <p className="text-sm leading-relaxed">{explainData?.explanation}</p>
+                <ul className="flex list-inside list-disc flex-col gap-1.5 text-sm leading-relaxed">
+                  {(explainData?.explanation ?? "")
+                    .split(/(?<=\.)\s+/)
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .map((s, i, arr) => (
+                      <li key={i} className={i === arr.length - 1 ? "font-medium" : undefined}>
+                        {s}
+                      </li>
+                    ))}
+                </ul>
               )}
             </DialogContent>
           </Dialog>

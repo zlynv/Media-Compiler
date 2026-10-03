@@ -14,6 +14,9 @@ import { useAssets, useCreateAsset, useUpdateAsset } from "@/lib/api";
 import { formatBytes } from "@/lib/format";
 import type { SourceAsset } from "@/lib/types";
 
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ?? "";
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
+
 export default function AssetsPage() {
   const { data, isLoading, isError, refetch } = useAssets();
   const assets = data?.assets ?? [];
@@ -22,7 +25,7 @@ export default function AssetsPage() {
     <div>
       <PageHeader
         title="Source Assets"
-        description="Master media registered with the compiler. Register by URL here, or upload via Cloudinary on any contract."
+        description="Master media registered with the compiler. Upload a file directly, register by URL, or use the Upload Widget on any contract."
         action={<RegisterAssetDialog />}
       />
       {isLoading ? (
@@ -40,7 +43,7 @@ export default function AssetsPage() {
       ) : assets.length === 0 ? (
         <EmptyState
           title="No source assets"
-          description="Register one by URL, or upload through the Cloudinary widget on any contract."
+          description="Upload a file directly, register by URL, or use the Upload Widget on any contract."
           action={<RegisterAssetDialog />}
         />
       ) : (
@@ -57,6 +60,9 @@ export default function AssetsPage() {
 function RegisterAssetDialog() {
   const create = useCreateAsset();
   const [open, setOpen] = React.useState(false);
+  const [mode, setMode] = React.useState<"file" | "url">("file");
+  const [file, setFile] = React.useState<File | null>(null);
+  const [uploading, setUploading] = React.useState(false);
   const [form, setForm] = React.useState({
     name: "",
     secureUrl: "",
@@ -68,6 +74,62 @@ function RegisterAssetDialog() {
   });
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const resetAll = () => {
+    setOpen(false);
+    setFile(null);
+    setForm({ name: "", secureUrl: "", width: "", height: "", bytes: "", format: "jpg", altText: "" });
+  };
+
+  const registerUploaded = (info: Record<string, unknown>, fallbackName: string, alt: string) => {
+    create.mutate(
+      {
+        name: String(info.original_filename ?? info.public_id ?? fallbackName),
+        secureUrl: String(info.secure_url ?? ""),
+        cloudinaryPublicId: String(info.public_id ?? ""),
+        width: Number(info.width ?? 0),
+        height: Number(info.height ?? 0),
+        bytes: Number(info.bytes ?? 0),
+        format: String(info.format ?? "jpg"),
+        altText: alt.trim() === "" ? String(info.original_filename ?? fallbackName) : alt.trim(),
+      },
+      {
+        onSuccess: () => {
+          toast.success("Master asset uploaded to Cloudinary");
+          resetAll();
+        },
+        onError: (e) => toast.error(e.message),
+      },
+    );
+  };
+
+  const uploadFile = async () => {
+    if (!file) {
+      toast.error("Choose an image file first");
+      return;
+    }
+    if (!CLOUD_NAME || !UPLOAD_PRESET) {
+      toast.error("Cloudinary upload preset is not configured - use URL mode instead");
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", UPLOAD_PRESET);
+      fd.append("tags", "media-compiler,source");
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status})`);
+      registerUploaded(await res.json(), file.name, form.altText);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = () => {
     create.mutate(
@@ -102,10 +164,50 @@ function RegisterAssetDialog() {
         <DialogHeader>
           <DialogTitle>Register source asset</DialogTitle>
           <DialogDescription>
-            Point the compiler at an already-hosted file. For Cloudinary uploads with automatic
-            metadata, use the Upload Widget on any contract instead.
+            Upload a file directly to Cloudinary, or point the compiler at an already-hosted file.
           </DialogDescription>
         </DialogHeader>
+        <div className="flex gap-1.5" role="group" aria-label="Registration mode">
+          {(["file", "url"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              onClick={() => setMode(m)}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                mode === m
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m === "file" ? "Upload file" : "From URL"}
+            </button>
+          ))}
+        </div>
+        {mode === "file" ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ra-file">Image file</Label>
+              <Input
+                id="ra-file"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {file ? `${file.name} (${Math.round(file.size / 1024)} KB)` : "JPG / PNG / WebP — metadata is read automatically."}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ra-alt-file">Alt text (optional)</Label>
+              <Input id="ra-alt-file" value={form.altText} onChange={set("altText")} placeholder="Describe this image…" />
+            </div>
+            <Button onClick={uploadFile} disabled={uploading || create.isPending || !file} className="mt-1 w-full">
+              {uploading ? "Uploading to Cloudinary…" : "Upload & Register"}
+            </Button>
+          </div>
+        ) : (
+        <>
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 flex flex-col gap-1.5">
             <Label htmlFor="ra-name">Name</Label>
@@ -139,6 +241,8 @@ function RegisterAssetDialog() {
         <Button onClick={submit} disabled={create.isPending} className="mt-2 w-full">
           {create.isPending ? "Registering…" : "Register Asset"}
         </Button>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

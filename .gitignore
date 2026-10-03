@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# agent/dev-tooling files (auto-regenerated locally, never pushed)
+AGENTS.md
+CLAUDE.md
 # project notes / specs (kept local, never pushed)
 /docs/
 # runtime data (seeded automatically on first run)

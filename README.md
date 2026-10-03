@@ -269,7 +269,7 @@ Cloudinary provides media capabilities; Media Compiler provides the lifecycle ab
 | Build engine + state machine | ✅ Implemented |
 | Technical QA (measured bytes/format/dims) | ✅ Implemented |
 | Visual/policy/accessibility QA framework | ✅ Implemented (deterministic contract evaluation) |
-| Cloudinary AI visual analysis | ⚠ Roadmap — framework ready, provider not wired; never claimed otherwise |
+| Cloudinary AI visual analysis | ⚠ Roadmap — evaluation framework ready, provider not wired |
 | Severity (BLOCK/WARN/INFO) + confidence review | ✅ Implemented |
 | Auto-repair + budgets + explicit rejection | ✅ Implemented |
 | Re-test (full suite) | ✅ Implemented |
