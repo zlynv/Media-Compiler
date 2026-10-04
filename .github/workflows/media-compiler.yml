@@ -1,0 +1,28 @@
+name: Media Compiler
+
+# CI for visual assets: compile changed media against the Media Contract.
+# Configure MEDIA_COMPILER_URL, MEDIA_COMPILER_CONTRACT and MEDIA_COMPILER_ASSET
+# as repository variables/secrets. Fails the workflow when the media build fails.
+on:
+  pull_request:
+    paths:
+      - "assets/**"
+      - "media-contract.yml"
+  workflow_dispatch:
+
+jobs:
+  media-compiler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run Media Compiler
+        env:
+          MEDIA_COMPILER_URL: ${{ vars.MEDIA_COMPILER_URL }}
+          MEDIA_COMPILER_CONTRACT: ${{ vars.MEDIA_COMPILER_CONTRACT }}
+          MEDIA_COMPILER_ASSET: ${{ vars.MEDIA_COMPILER_ASSET }}
+        run: node scripts/mc-check.mjs
