@@ -286,6 +286,8 @@ Cloudinary provides media capabilities; Media Compiler provides the lifecycle ab
 
 ## Demo
 
+**Live demo:** [https://media-compiler.onrender.com](https://media-compiler.onrender.com)
+
 **3-minute demo:** contract → upload master → Compile → live log → open the 4:5 failure → why → Auto Repair → re-test → Release → Cloudinary Trace → live artifact URL. Then `poster-7.jpg` for the review branch, and Compare Versions after any contract edit.
 
 **30-second evaluation (for judges):**
