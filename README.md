@@ -19,8 +19,6 @@
 
 Media Compiler treats visual media like software artifacts. Teams define executable Media Contracts, compile source assets into production variants, run QA, repair safe failures, re-test, and release only verified artifacts.
 
-<!-- Demo video (2-4 min): record the Demo Flow below and link it here. -->
-
 ## How It Works
 
 1. Define a versioned **Media Contract** (variants, technical/visual/policy/accessibility rules, severity, repair budget), or start from a preset.
@@ -83,9 +81,7 @@ Thin route handlers; all logic in `src/lib/`. Only `cloudinary.ts` knows SDK det
 
 **Live:** [https://media-compiler.onrender.com](https://media-compiler.onrender.com)
 
-**3-minute take:** contract → upload master → Compile → live log → open the 4:5 failure → why → Auto Repair → re-test → Release → Trace → live URL. Then `poster-7.jpg` for the review branch.
-
-**30-second judge check:** failed build → Release tab → RELEASE (server refuses 409) · build Timeline → Cloudinary Trace (real public IDs) · edit contract → Compare Versions.
+**3-minute take:** contract, upload master, Compile, live log, open the 4:5 failure, why, Auto Repair, re-test, Release, Trace, live URL. Then `poster-7.jpg` for the review branch.
 
 ## Screenshots
 
@@ -103,7 +99,7 @@ Measured values from a verified run (Diwali Campaign v3, 500 KB limit):
 
 ```text
 1:1  pass (190 KB)
-4:5  fail (product cropped, 1.3 MB measured) → smart crop + q_auto → v2 pass (193 KB)
+4:5  fail (product cropped, 1.3 MB measured). Repair (smart crop, q_auto). Result: v2 pass (193 KB).
 16:9 pass (296 KB)
 Release: 3/3 passed, 0 unresolved blocking failures
 ```
